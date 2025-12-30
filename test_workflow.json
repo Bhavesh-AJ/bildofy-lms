@@ -1,0 +1,73 @@
+{
+  "name": "Test PDF Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "test_pdf",
+        "responseMode": "lastNode"
+      },
+      "name": "Webhook - Test",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 200]
+    },
+    {
+      "parameters": {
+        "content": "This is a PDF test",
+        "options": {
+          "fileName": "test.pdf"
+        }
+      },
+      "name": "PDF - Generate",
+      "type": "n8n-nodes-base.pdf",
+      "typeVersion": 1,
+      "position": [400, 200]
+    },
+    {
+      "parameters": {
+        "options": {
+          "encoding": "base64"
+        }
+      },
+      "name": "Binary to JSON",
+      "type": "n8n-nodes-base.binaryToJson",
+      "typeVersion": 1,
+      "position": [600, 200]
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode",
+        "responseData": "={{$json}}"
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [800, 200]
+    }
+  ],
+  "connections": {
+    "Webhook - Test": {
+      "main": [
+        [
+          { "node": "PDF - Generate", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "PDF - Generate": {
+      "main": [
+        [
+          { "node": "Binary to JSON", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Binary to JSON": {
+      "main": [
+        [
+          { "node": "Respond to Webhook", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false
+}

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ title }}</title>
+
+  <!-- KaTeX CSS -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css" />
+
+  <!-- Code Highlight (optional) -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css"/>
+
+  <style>
+    :root {
+      --accent-blue: #1e40af;
+      --text-color: #111827;
+      --muted: #6b7280;
+      --paper: #ffffff;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      background: #f0f2f5;
+      color: var(--text-color);
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      background: var(--paper);
+      padding: 22mm;
+      margin: 12mm auto;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+      box-sizing: border-box;
+    }
+
+    h1, h2, h3 {
+      color: var(--accent-blue);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    h1 { font-size: 22px; }
+    h2 { font-size: 18px; margin-top: 20px; }
+    h3 { font-size: 15px; margin-top: 16px; }
+
+    p, li {
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 12px;
+    }
+
+    .math-block {
+      background: #f8fafc;
+      padding: 10px;
+      margin: 12px 0;
+      border-left: 3px solid var(--accent-blue);
+    }
+
+    pre, code {
+      background: #f3f4f6;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+
+    .content {
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <h1>{{ title }}</h1>
+
+    <article class="content">
+      {{ content | safe }}
+    </article>
+  </div>
+
+  <!-- KaTeX JS -->
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Render KaTeX BEFORE Playwright prints -->
+  <script>
+    window.__katex_render_done = false;
+
+    function runKatex() {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "\\[", right: "\\]", display: true},
+          {left: "$", right: "$", display: false},
+          {left: "\\(", right: "\\)", display: false}
+        ],
+        throwOnError: false
+      });
+
+      // Give layout time to settle
+      setTimeout(() => {
+        window.__katex_render_done = true;
+      }, 150);
+    }
+
+    document.addEventListener("DOMContentLoaded", runKatex);
+  </script>
+
+  <!-- Highlight.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

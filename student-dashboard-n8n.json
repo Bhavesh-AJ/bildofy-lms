@@ -1,0 +1,314 @@
+{
+  "name": "Student Dashboard AI Workflow (n8n v1.119, PDF4me)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "student_ai_request",
+        "responseMode": "lastNode"
+      },
+      "name": "Webhook - Student AI Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [160, 260]
+    },
+    {
+      "parameters": {
+        "value": "={{$json[\"request_type\"]}}",
+        "rules": [
+          {
+            "value": "generate_test",
+            "action": "set",
+            "node": "Fetch Student Details"
+          },
+          {
+            "value": "generate_notes",
+            "action": "set",
+            "node": "Fetch Student Details"
+          },
+          {
+            "value": "generate_flashcards",
+            "action": "set",
+            "node": "Fetch Student Details"
+          },
+          {
+            "value": "generate_assignment",
+            "action": "set",
+            "node": "Fetch Student Details"
+          },
+          {
+            "value": "weekly_report",
+            "action": "set",
+            "node": "Fetch Student Details"
+          }
+        ],
+        "default": { "node": "Respond - Unknown Type" }
+      },
+      "name": "Switch - Route by Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [420, 260]
+    },
+    {
+      "parameters": {
+        "query": "SELECT * FROM students WHERE student_id = '{{$json[\"student_id\"]}}';"
+      },
+      "name": "Fetch Student Details",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [720, 120],
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CREDENTIAL_PLACEHOLDER",
+          "name": "Postgres Student DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{$env.PINECONE_BASE_URL || 'https://controller.pinecone.io' }}",
+        "method": "POST",
+        "authentication": "headerAuth",
+        "options": {},
+        "jsonBody": "={\n  \"queries\": [\n    { \"topK\": 5, \"vector\": \"{{ $json.vector_embedding || $json['topic'] }}\" }\n  ]\n}",
+        "responseFormat": "json",
+        "headerParametersJson": "={\n  \"Api-Key\": \"{{$env.PINECONE_API_KEY || ''}}\",\n  \"Content-Type\": \"application/json\"\n}"
+      },
+      "name": "HTTP Request - Vector DB (RAG)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [720, 360]
+    },
+    {
+      "parameters": {
+        "values": {
+          "json": [
+            {
+              "name": "prompt",
+              "value": "You are an expert high-school tutor. Student: {{$json['student_id']}} (Grade {{$json['grade']}}; Board {{$json['board']}}). Subject: {{$json['subject']}}. Topic: {{$json['topic']}}.\n\nContext snippets (RAG): {{$node['HTTP Request - Vector DB (RAG)'].json}}.\n\nStudent profile: {{$node['Fetch Student Details'].json[0]}}.\n\nTask: {{$json['request_type']}}.\n\nProduce a machine-readable JSON output for tests/assignments/flashcards/notes (or a human-friendly markdown/HTML for reports). Include metadata fields: source_refs (list), difficulty_level (easy/medium/hard), marks (if applicable), and a unique id for each generated item."
+            }
+          ]
+        }
+      },
+      "name": "Set - Build Prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [940, 240]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are an educational content generator. Output strictly in JSON for tests/assignments/flashcards/notes; for reports, return markdown or HTML. Always embed a 'source_refs' array of chunks used from the context."
+          },
+          {
+            "role": "user",
+            "content": "={{$json[\"prompt\"]}}"
+          }
+        ],
+        "temperature": 0.2,
+        "maxTokens": 2500
+      },
+      "name": "OpenAI - Generate Content",
+      "type": "n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1200, 240],
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_PLACEHOLDER",
+          "name": "OpenAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json['request_type']}}",
+              "value2": "weekly_report"
+            }
+          ]
+        }
+      },
+      "name": "IF - Is Weekly Report?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1450, 240]
+    },
+    {
+      "parameters": {
+        "operation": "Generate Document (Single)",
+        "fileName": "report_{{$json['student_id']}}.pdf",
+        "mimeType": "application/pdf",
+        "inputType": "html",
+        "html": "={{\n  // The OpenAI node returns multiple message parts; prefer 'text' or 'content' depending on node output\n  $json['text'] || $json['content'] || ('<pre>' + ($json['messages'] ? JSON.stringify($json['messages']) : JSON.stringify($json)) + '</pre>')\n}}",
+        "applyWatermark": false
+      },
+      "name": "PDF4ME - Generate PDF from HTML",
+      "type": "n8n-nodes-pdf4me.pdf4me",
+      "typeVersion": 1,
+      "position": [1690, 120],
+      "credentials": {
+        "pdf4meApi": {
+          "id": "PDF4ME_CREDENTIAL_PLACEHOLDER",
+          "name": "PDF4ME account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "encoding": "base64"
+        }
+      },
+      "name": "Binary to JSON - Encode PDF",
+      "type": "n8n-nodes-base.binaryToJson",
+      "typeVersion": 1,
+      "position": [1900, 120]
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode",
+        "responseData": "={{ { \"status\": \"success\", \"type\": $json['request_type'], \"data\": { \"filename\": \"report_\" + $json['student_id'] + \".pdf\", \"filetype\": \"application/pdf\", \"content\": $json['data'] } } }}"
+      },
+      "name": "Respond - PDF (Base64 JSON)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2120, 120]
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode",
+        "responseData": "={{ { \"status\": \"success\", \"type\": $json['request_type'], \"data\": ( $json['text'] ? (try { return JSON.parse($json['text']) } catch(e) { return $json['text'] } ) : $json['content'] || $json ) } }}"
+      },
+      "name": "Respond - JSON Content",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1690, 360]
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode",
+        "responseData": "{\"status\":\"error\",\"message\":\"Unknown request type\"}"
+      },
+      "name": "Respond - Unknown Type",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1690, 520]
+    }
+  ],
+  "connections": {
+    "Webhook - Student AI Request": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route by Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route by Type": {
+      "main": [
+        [
+          {
+            "node": "Fetch Student Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Student Details": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Vector DB (RAG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Vector DB (RAG)": {
+      "main": [
+        [
+          {
+            "node": "Set - Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Generate Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Generate Content": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Weekly Report?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Weekly Report?": {
+      "main": [
+        [
+          {
+            "node": "PDF4ME - Generate PDF from HTML",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - JSON Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF4ME - Generate PDF from HTML": {
+      "main": [
+        [
+          {
+            "node": "Binary to JSON - Encode PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Binary to JSON - Encode PDF": {
+      "main": [
+        [
+          {
+            "node": "Respond - PDF (Base64 JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}
