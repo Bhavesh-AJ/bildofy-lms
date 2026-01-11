@@ -1,10 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/cards/StatCard';
 import {
   Users,
-  FileText,
   ClipboardCheck,
   TrendingUp,
   Plus,
@@ -29,6 +28,8 @@ const recentActivity = [
 ];
 
 const TeacherDashboard: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -40,7 +41,9 @@ const TeacherDashboard: React.FC = () => {
                 <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-sm">L</span>
                 </div>
-                <span className="font-display font-bold text-lg text-foreground">LearnSphere</span>
+                <span className="font-display font-bold text-lg text-foreground">
+                  LearnSphere
+                </span>
               </Link>
               <span className="text-sm text-muted-foreground px-2 py-0.5 bg-secondary rounded-full">
                 Teacher
@@ -72,21 +75,42 @@ const TeacherDashboard: React.FC = () => {
 
         {/* Quick Actions */}
         <section className="mb-8 animate-fade-up" style={{ animationDelay: '0.1s' }}>
-          <h2 className="text-lg font-display font-semibold text-foreground mb-4">Quick Actions</h2>
+          <h2 className="text-lg font-display font-semibold text-foreground mb-4">
+            Quick Actions
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="action" className="h-auto py-4 flex-col gap-2">
+            <Button
+              variant="action"
+              className="h-auto py-4 flex-col gap-2"
+              onClick={() => navigate('/teacher/create-assignment')}
+            >
               <Plus className="w-6 h-6 text-primary" />
               <span>Create Assignment</span>
             </Button>
-            <Button variant="action" className="h-auto py-4 flex-col gap-2">
+
+            <Button
+              variant="action"
+              className="h-auto py-4 flex-col gap-2"
+              onClick={() => navigate('/teacher/create-test')}
+            >
               <ClipboardCheck className="w-6 h-6 text-primary" />
               <span>Create Test</span>
             </Button>
-            <Button variant="action" className="h-auto py-4 flex-col gap-2">
+
+            <Button
+              variant="action"
+              className="h-auto py-4 flex-col gap-2"
+              onClick={() => navigate('/teacher/ai-content')}
+            >
               <Sparkles className="w-6 h-6 text-primary" />
               <span>AI Content</span>
             </Button>
-            <Button variant="action" className="h-auto py-4 flex-col gap-2">
+
+            <Button
+              variant="action"
+              className="h-auto py-4 flex-col gap-2"
+              onClick={() => navigate('/teacher/analytics')}
+            >
               <BarChart3 className="w-6 h-6 text-primary" />
               <span>View Analytics</span>
             </Button>
@@ -95,7 +119,9 @@ const TeacherDashboard: React.FC = () => {
 
         {/* Stats */}
         <section className="mb-8 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-          <h2 className="text-lg font-display font-semibold text-foreground mb-4">Overview</h2>
+          <h2 className="text-lg font-display font-semibold text-foreground mb-4">
+            Overview
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard
               title="Total Students"
@@ -123,7 +149,9 @@ const TeacherDashboard: React.FC = () => {
 
         {/* Recent Activity */}
         <section className="animate-fade-up" style={{ animationDelay: '0.3s' }}>
-          <h2 className="text-lg font-display font-semibold text-foreground mb-4">Recent Activity</h2>
+          <h2 className="text-lg font-display font-semibold text-foreground mb-4">
+            Recent Activity
+          </h2>
           <div className="bg-card border border-border rounded-xl divide-y divide-border">
             {recentActivity.map((activity) => (
               <div key={activity.id} className="p-4 flex items-center justify-between">
@@ -131,7 +159,9 @@ const TeacherDashboard: React.FC = () => {
                   <p className="font-medium text-foreground">{activity.action}</p>
                   <p className="text-sm text-muted-foreground">{activity.item}</p>
                 </div>
-                <span className="text-sm text-muted-foreground">{activity.time}</span>
+                <span className="text-sm text-muted-foreground">
+                  {activity.time}
+                </span>
               </div>
             ))}
           </div>

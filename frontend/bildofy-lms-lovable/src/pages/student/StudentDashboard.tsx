@@ -136,13 +136,14 @@ const StudentDashboard: React.FC = () => {
                   onClick={() => navigate('/student/flashcards')}
                 />
                 <ActionCard
-                  title="Watch Videos"
-                  description="Visual explanations for complex topics"
-                  icon={Play}
-                  xpReward={20}
-                  requiresOnline
-                  onClick={() => navigate('/student/videos')}
+                 title="Watch Videos"
+                 description="Visual explanations for complex topics"
+                 icon={Play}
+                 xpReward={20}
+                 requiresOnline
+                onClick={() => navigate('/student/watch-videos')}
                 />
+
                 <ActionCard
                   title="Ask AI Doubt"
                   description="Get instant explanations"
